@@ -12,16 +12,16 @@ export function dateAt(week, day) {
   const [y,m,d] = week.split('-').map(Number);
   return new Date(y,m-1,d+day);
 }
-export function mealsForWeek(week, done = {}) {
-  return MENU.flatMap((meals, day) => meals.map((meal, slot) => ({...meal, day, slot, date:localDate(dateAt(week,day)), key:`${week}:${day}:${slot}`, done:!!done[`${week}:${day}:${slot}`]})));
+export function mealsForWeek(week, done = {}, shared = {}) {
+  return MENU.flatMap((meals, day) => meals.map((meal, slot) => ({...meal, day, slot, date:localDate(dateAt(week,day)), key:`${week}:${day}:${slot}`, done:!!done[`${week}:${day}:${slot}`], shared:!!shared[`${week}:${day}:${slot}`]})));
 }
-export function requirements(week, done = {}) {
+export function requirements(week, done = {}, shared = {}) {
   const rows = Object.fromEntries(Object.keys(ITEMS).map(key => [key, Array(7).fill(0)]));
-  for (const meal of mealsForWeek(week,done)) if (!meal.done) for (const [key,amount] of Object.entries(meal.parts)) rows[key][meal.day] += amount;
+  for (const meal of mealsForWeek(week,done,shared)) if (!meal.done) for (const [key,amount] of Object.entries(meal.parts)) rows[key][meal.day] += amount * (meal.shared ? 2 : 1);
   return rows;
 }
-export function forecast(week, stock = {}, done = {}) {
-  const req = requirements(week,done);
+export function forecast(week, stock = {}, done = {}, shared = {}) {
+  const req = requirements(week,done,shared);
   return Object.fromEntries(Object.entries(req).map(([key,days]) => {
     const available = Number(stock[key]) || 0;
     const required = days.reduce((sum,n) => sum+n,0);
@@ -37,7 +37,7 @@ export function forecast(week, stock = {}, done = {}) {
     return [key,{available,required,toBuy:Math.max(0,required-available),firstMissing,lastCovered,daily}];
   }));
 }
-export function totalForDay(week, day, done = {}) {
-  const rows = requirements(week,done);
+export function totalForDay(week, day, done = {}, shared = {}) {
+  const rows = requirements(week,done,shared);
   return Object.fromEntries(Object.entries(rows).map(([key,values])=>[key,values[day]]));
 }
