@@ -11,7 +11,7 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" type="image/svg+xml" href="./icon.svg">
   <link rel="apple-touch-icon" href="./apple-touch-icon.png">
-  <link rel="stylesheet" href="./styles.css?v=2">
+  <link rel="stylesheet" href="./styles.css?v=3">
   <title>Mi menú · Compra semanal</title>
 </head>
 <body>
@@ -19,7 +19,10 @@
     <header class="topbar">
       <div class="brand-mark">M<span>·</span></div>
       <div class="brand-copy"><span>ORGANIZA TU SEMANA</span><strong>Mi menú</strong></div>
-      <button class="icon-button" id="settings-button" aria-label="Ajustes y copia de seguridad" title="Ajustes">⚙</button>
+      <div class="top-actions">
+        <button class="icon-button refresh-button" id="refresh-button" aria-label="Descargar últimas actualizaciones" title="Actualizar aplicación">↻</button>
+        <button class="icon-button" id="settings-button" aria-label="Ajustes y copia de seguridad" title="Ajustes">⚙</button>
+      </div>
     </header>
     <main id="app" aria-live="polite"></main>
     <nav class="bottom-nav" aria-label="Secciones">
@@ -30,6 +33,6 @@
   </div>
   <dialog id="dialog"><div id="dialog-content"></div></dialog>
   <div id="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="./app.js?v=2"></script>
+  <script type="module" src="./app.js?v=3"></script>
 </body>
 </html>
