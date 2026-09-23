@@ -120,6 +120,7 @@ app.addEventListener('click',e=>{
 app.addEventListener('change',e=>{if(e.target.id==='day-filter'){filter=e.target.value;render();}});
 tabs.forEach(button=>button.addEventListener('click',()=>{tab=button.dataset.tab;render();window.scrollTo({top:0,behavior:'instant'});}));
 document.querySelector('#settings-button').addEventListener('click',settings);
+document.querySelector('#refresh-button').addEventListener('click',refreshApp);
 dialog.addEventListener('click',e=>{if(e.target===dialog||e.target.closest('[data-close]'))closeDialog();});
 dialog.addEventListener('submit',e=>{
   if(!['stock-form','buy-form'].includes(e.target.id))return;
@@ -155,8 +156,22 @@ dialog.addEventListener('change',async e=>{
     state={version:1,stock,done,deductions,permanent,purchases};closeDialog();save();toast('Copia importada correctamente');
   }catch{toast('No se ha podido leer esta copia');}
 });
-if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js?v=2').catch(()=>{});
+if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js?v=3').catch(()=>{});
 render();
+
+async function refreshApp() {
+  const button=document.querySelector('#refresh-button');
+  button.disabled=true;button.classList.add('loading');
+  try {
+    const check=await fetch(`./index.html?update=${Date.now()}`,{cache:'no-store'});
+    if(!check.ok)throw Error('Sin conexión');
+    if('serviceWorker' in navigator){const registration=await navigator.serviceWorker.getRegistration('./');await registration?.update();}
+    if('caches' in window){const keys=await caches.keys();await Promise.all(keys.filter(key=>key.startsWith('mi-menu-')).map(key=>caches.delete(key)));}
+    window.location.reload();
+  }catch{
+    button.disabled=false;button.classList.remove('loading');toast('No se ha podido actualizar. Comprueba la conexión.');
+  }
+}
 
 function withPermanent(rows) {
   return Object.fromEntries(Object.entries(rows).map(([key,row])=>[key,state.permanent[key]?{...row,permanent:true,toBuy:0,firstMissing:null,lastCovered:6,daily:row.daily.map(day=>({...day,missing:0}))}:row]));
