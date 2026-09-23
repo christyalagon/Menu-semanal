@@ -1,4 +1,4 @@
-const CACHE = 'mi-menu-v4';
+const CACHE = 'mi-menu-v5';
 const ASSETS = ['./', './index.html', './styles.css', './app.js', './core.js', './menu.js', './manifest.webmanifest', './icon.svg', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS)).then(() => self.skipWaiting()));
