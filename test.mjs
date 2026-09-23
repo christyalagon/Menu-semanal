@@ -22,4 +22,10 @@ const afterBreakfast = forecast(week, { pan: 700 }, mondayBreakfastDone);
 assert.equal(afterBreakfast.pan.required, 700);
 assert.equal(afterBreakfast.pan.toBuy, 0);
 
+const carolinaMondayLunch = { [`${week}:0:1`]: true };
+const shared = forecast(week, {}, {}, carolinaMondayLunch);
+assert.equal(shared.arroz.required, 390);
+assert.equal(shared.pollo.required, 1180);
+assert.equal(shared.verdura.required, 3100);
+
 console.log('Cálculos del menú verificados correctamente.');
