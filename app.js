@@ -6,7 +6,7 @@ const app = document.querySelector('#app');
 const dialog = document.querySelector('#dialog');
 const content = document.querySelector('#dialog-content');
 const tabs = document.querySelectorAll('.nav-item');
-let tab = 'week', selectedDay = Math.min(6,(new Date().getDay()+6)%7), filter = 'all';
+let tab = 'week', selectedDay = Math.min(6,(new Date().getDay()+6)%7), filter = 'all', searchQuery = '';
 let week = mondayOf();
 let state = load();
 
@@ -32,12 +32,27 @@ function mealCard(meal) {
   const entries=Object.entries(meal.parts);
   return `<article class="meal-card ${meal.done?'completed':''}"><div class="meal-top"><div><span class="meal-kind">${meal.name} <i>·</i> ${meal.time}</span><h3>${meal.title}</h3></div><button class="check-button ${meal.done?'checked':''}" data-meal="${meal.key}" aria-label="${meal.done?'Desmarcar':'Marcar como preparada'} ${meal.name}" aria-pressed="${meal.done}">${meal.done?'✓':''}</button></div>${entries.length?`<div class="ingredients">${entries.map(([key,value])=>`<span>${safe(ITEMS[key][0])} <b>${qty(key,value)}</b></span>`).join('')}</div>`:''}${meal.note?`<p class="meal-note">${safe(meal.note)}</p>`:''}</article>`;
 }
+function normalizeSearch(value) { return value.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim(); }
+function searchResults(query) {
+  const normalized=normalizeSearch(query);
+  if(!normalized)return '<p class="search-hint">Escribe un alimento, por ejemplo: pollo, arroz, patata o yogur.</p>';
+  const matches=Object.keys(ITEMS).filter(key=>normalizeSearch(ITEMS[key][0]).includes(normalized));
+  if(!matches.length)return `<div class="search-empty"><span>⌕</span><strong>No aparece en el menú</strong><small>Prueba con otro nombre de alimento.</small></div>`;
+  return matches.map(key=>{
+    const uses=MENU.flatMap((meals,day)=>meals.filter(meal=>meal.parts[key]).map(meal=>({day,meal,amount:meal.parts[key]})));
+    const total=uses.reduce((sum,use)=>sum+use.amount,0),days=new Set(uses.map(use=>use.day)).size;
+    return `<article class="search-product"><div class="search-product-head"><div><small>${ITEMS[key][2]}</small><h3>${safe(ITEMS[key][0])}</h3></div><strong>${days} ${days===1?'día':'días'} · ${qty(key,total)}</strong></div><div class="search-uses">${uses.map(use=>`<button data-result-day="${use.day}"><span>${SHORT_DAYS[use.day]}</span><div><strong>${use.meal.name}: ${safe(use.meal.title)}</strong><small>${qty(key,use.amount)}</small></div><i>›</i></button>`).join('')}</div></article>`;
+  }).join('');
+}
+function searchPanel() {
+  return `<section class="product-search"><label for="product-search">Buscar un producto en tu menú</label><div class="search-field"><span aria-hidden="true">⌕</span><input id="product-search" type="search" inputmode="search" autocomplete="off" placeholder="Ej.: pollo, arroz, patata…" value="${safe(searchQuery)}"><button type="button" data-clear-search aria-label="Borrar búsqueda" ${searchQuery?'':'hidden'}>×</button></div><div id="search-results" class="search-results">${searchResults(searchQuery)}</div></section>`;
+}
 function weekView() {
   const meals=mealsForWeek(week,state.done).filter(m=>m.day===selectedDay);
   const all=mealsForWeek(week,state.done);const count=all.filter(m=>m.done).length;
   return `${hero('TU PLAN, A TU RITMO','Una semana más fácil','Cada comida preparada descuenta sus ingredientes de la despensa.')}
   <section class="hero-card"><div class="hero-top"><span>SEMANA DEL ${dateLabel(0).toUpperCase()}</span><span>${count} / 28 comidas</span></div><div class="hero-main"><div><strong>${DAY_NAMES[selectedDay]}</strong><span>${dateLabel(selectedDay)} · 4 momentos</span></div><div class="hero-ornament" aria-hidden="true">✳</div></div><div class="progress"><div style="width:${100*count/28}%"></div></div></section>
-  ${daySelector()}<div class="section-row"><h2>Plan del día</h2><span>Pesos indicados por alimento</span></div><div class="meal-list">${meals.map(mealCard).join('')}</div><p class="footnote">Arroz y pasta en crudo; legumbres cocidas y escurridas. Café y sacarina del desayuno son opcionales. La cena social del sábado queda fuera de la compra.</p>`;
+  ${daySelector()}${searchPanel()}<div class="section-row"><h2>Plan del día</h2><span>Pesos indicados por alimento</span></div><div class="meal-list">${meals.map(mealCard).join('')}</div><p class="footnote">Arroz y pasta en crudo; legumbres cocidas y escurridas. Café y sacarina del desayuno son opcionales. La cena social del sábado queda fuera de la compra.</p>`;
 }
 function statusText(row) {
   if (row.permanent) return 'Marcado como siempre disponible';
@@ -112,11 +127,14 @@ function toggleMeal(key) {
   save();toast(newDone?'Comida preparada: ingredientes descontados':'Comida desmarcada: ingredientes devueltos');
 }
 app.addEventListener('click',e=>{
+  const result=e.target.closest('[data-result-day]');if(result){selectedDay=Number(result.dataset.resultDay);searchQuery='';render();document.querySelector('.section-row')?.scrollIntoView({behavior:'smooth'});return;}
+  if(e.target.closest('[data-clear-search]')){searchQuery='';const input=document.querySelector('#product-search');if(input){input.value='';input.focus();document.querySelector('#search-results').innerHTML=searchResults('');e.target.hidden=true;}return;}
   const day=e.target.closest('[data-day]');if(day){selectedDay=Number(day.dataset.day);render();return;}
   const meal=e.target.closest('[data-meal]');if(meal){toggleMeal(meal.dataset.meal);return;}
   const purchase=e.target.closest('[data-buy]');if(purchase){buy(purchase.dataset.buy);return;}
   const stock=e.target.closest('[data-stock]');if(stock)editStock(stock.dataset.stock);
 });
+app.addEventListener('input',e=>{if(e.target.id==='product-search'){searchQuery=e.target.value;document.querySelector('#search-results').innerHTML=searchResults(searchQuery);document.querySelector('[data-clear-search]').hidden=!searchQuery;}});
 app.addEventListener('change',e=>{if(e.target.id==='day-filter'){filter=e.target.value;render();}});
 tabs.forEach(button=>button.addEventListener('click',()=>{tab=button.dataset.tab;render();window.scrollTo({top:0,behavior:'instant'});}));
 document.querySelector('#settings-button').addEventListener('click',settings);
@@ -156,7 +174,7 @@ dialog.addEventListener('change',async e=>{
     state={version:1,stock,done,deductions,permanent,purchases};closeDialog();save();toast('Copia importada correctamente');
   }catch{toast('No se ha podido leer esta copia');}
 });
-if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js?v=3').catch(()=>{});
+if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js?v=4').catch(()=>{});
 render();
 
 async function refreshApp() {
