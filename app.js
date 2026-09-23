@@ -155,7 +155,7 @@ dialog.addEventListener('change',async e=>{
     state={version:1,stock,done,deductions,permanent,purchases};closeDialog();save();toast('Copia importada correctamente');
   }catch{toast('No se ha podido leer esta copia');}
 });
-if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
+if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js?v=2').catch(()=>{});
 render();
 
 function withPermanent(rows) {
