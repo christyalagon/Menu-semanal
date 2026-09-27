@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { forecast, mondayOf, mealsForWeek } from './core.js';
+import { forecast, mondayOf, mealsForWeek, weightStats } from './core.js';
 
 const week = mondayOf(new Date(2026, 8, 23));
 const empty = forecast(week, {}, {});
@@ -27,5 +27,11 @@ const shared = forecast(week, {}, {}, carolinaMondayLunch);
 assert.equal(shared.arroz.required, 390);
 assert.equal(shared.pollo.required, 1180);
 assert.equal(shared.verdura.required, 3100);
+
+const progress = weightStats({'2026-09-25':80.7,'2026-09-01':82,'fecha-mal':99,'2026-09-12':81.2});
+assert.equal(progress.entries.length,3);
+assert.deepEqual(progress.first,{date:'2026-09-01',value:82});
+assert.deepEqual(progress.latest,{date:'2026-09-25',value:80.7});
+assert.equal(progress.change,-1.3);
 
 console.log('Cálculos del menú verificados correctamente.');
