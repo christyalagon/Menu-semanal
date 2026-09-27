@@ -41,3 +41,13 @@ export function totalForDay(week, day, done = {}, shared = {}) {
   const rows = requirements(week,done,shared);
   return Object.fromEntries(Object.entries(rows).map(([key,values])=>[key,values[day]]));
 }
+
+export function weightStats(weights = {}) {
+  const entries = Object.entries(weights)
+    .filter(([date,value]) => /^\d{4}-\d{2}-\d{2}$/.test(date) && typeof value === 'number' && Number.isFinite(value) && value >= 25 && value <= 300)
+    .sort(([a],[b]) => a.localeCompare(b))
+    .map(([date,value]) => ({date,value}));
+  const first = entries[0] || null;
+  const latest = entries.at(-1) || null;
+  return {entries,first,latest,change:first&&latest?Math.round((latest.value-first.value)*10)/10:null};
+}
